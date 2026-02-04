@@ -32,6 +32,20 @@ public protocol VoiceStreamCallback: AnyObject {
     /// Called when disconnected from server
     /// - Parameter reason: The reason for disconnection
     func onDisconnected(reason: String)
+
+    // MARK: - AI Clinic Voice Pipe Mode Callbacks
+
+    /// Called when a transcript is received from server (AI Clinic mode only)
+    /// The app should call their LLM with this transcript, then call sendLlmResponse()
+    /// - Parameters:
+    ///   - text: The transcribed user speech
+    ///   - isFinal: Whether this is the final transcript (always true currently)
+    ///   - language: Detected language ("en" or "ar")
+    func onTranscript(text: String, isFinal: Bool, language: String)
+
+    /// Called when the server starts playing a filler phrase (AI Clinic mode only)
+    /// Indicates the server is waiting for the LLM response
+    func onFillerStarted()
 }
 
 // MARK: - Default Implementations
@@ -54,4 +68,10 @@ public extension VoiceStreamCallback {
 
     /// Default implementation for onDisconnected
     func onDisconnected(reason: String) {}
+
+    /// Default implementation for onTranscript (AI Clinic mode)
+    func onTranscript(text: String, isFinal: Bool, language: String) {}
+
+    /// Default implementation for onFillerStarted (AI Clinic mode)
+    func onFillerStarted() {}
 }

@@ -63,6 +63,18 @@ public struct VoiceStreamConfig {
     /// Enable debug logging
     public let enableDebugLogging: Bool
 
+    // MARK: - AI Clinic Voice Pipe Mode
+
+    /// Enable AI Clinic mode (Voice Pipe - STT/TTS only)
+    /// When enabled, the SDK receives transcripts and sends LLM responses instead of the backend calling an LLM
+    public let aiClinicMode: Bool
+
+    /// Custom English filler phrase (optional, backend has defaults)
+    public let fillerPhraseEn: String?
+
+    /// Custom Arabic filler phrase (optional, backend has defaults)
+    public let fillerPhraseAr: String?
+
     // MARK: - Initialization
 
     /// Initialize VoiceStreamConfig with custom values
@@ -82,6 +94,9 @@ public struct VoiceStreamConfig {
     ///   - audioChannels: Number of channels (default: 1 - mono)
     ///   - audioBitDepth: Bit depth (default: 16)
     ///   - audioBufferSize: Buffer size in bytes (default: 1600)
+    ///   - aiClinicMode: Enable AI Clinic Voice Pipe mode (default: false)
+    ///   - fillerPhraseEn: Custom English filler phrase (optional)
+    ///   - fillerPhraseAr: Custom Arabic filler phrase (optional)
     public init(
         serverUrl: String = "wss://streaming-poc.smartserve.ai/ws",
         tenantId: String,
@@ -97,7 +112,10 @@ public struct VoiceStreamConfig {
         audioOutputSampleRate: Double = 24000.0,
         audioChannels: Int = 1,
         audioBitDepth: Int = 16,
-        audioBufferSize: Int = 1600
+        audioBufferSize: Int = 1600,
+        aiClinicMode: Bool = false,
+        fillerPhraseEn: String? = nil,
+        fillerPhraseAr: String? = nil
     ) {
         self.serverUrl = serverUrl
         self.tenantId = tenantId
@@ -114,6 +132,9 @@ public struct VoiceStreamConfig {
         self.audioChannels = audioChannels
         self.audioBitDepth = audioBitDepth
         self.audioBufferSize = audioBufferSize
+        self.aiClinicMode = aiClinicMode
+        self.fillerPhraseEn = fillerPhraseEn
+        self.fillerPhraseAr = fillerPhraseAr
     }
 }
 
@@ -137,7 +158,10 @@ extension VoiceStreamConfig: CustomStringConvertible {
             audioOutputSampleRate: \(audioOutputSampleRate) Hz,
             audioChannels: \(audioChannels),
             audioBitDepth: \(audioBitDepth),
-            audioBufferSize: \(audioBufferSize) bytes
+            audioBufferSize: \(audioBufferSize) bytes,
+            aiClinicMode: \(aiClinicMode),
+            fillerPhraseEn: \(fillerPhraseEn ?? "[NONE]"),
+            fillerPhraseAr: \(fillerPhraseAr ?? "[NONE]")
         )
         """
     }

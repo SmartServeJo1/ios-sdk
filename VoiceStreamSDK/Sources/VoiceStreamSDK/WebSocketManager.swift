@@ -250,6 +250,38 @@ extension WebSocketManager: WebSocketDelegate {
 
         case .text(let text):
             log("Received text: \(text)")
+
+            // Try to parse as JSON for special message types (AI Clinic mode)
+            if let data = text.data(using: .utf8),
+               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+               let messageType = json["type"] as? String {
+
+                switch messageType {
+                case "transcript":
+                    // AI Clinic Voice Pipe mode: transcript received
+                    if let transcriptText = json["text"] as? String {
+                        let isFinal = json["is_final"] as? Bool ?? true
+                        let language = json["language"] as? String ?? "en"
+                        DispatchQueue.main.async { [weak self] in
+                            self?.callback?.onTranscript(text: transcriptText, isFinal: isFinal, language: language)
+                        }
+                        return
+                    }
+                case "filler_started":
+                    // AI Clinic Voice Pipe mode: filler phrase started
+                    DispatchQueue.main.async { [weak self] in
+                        self?.callback?.onFillerStarted()
+                    }
+                    return
+                case "interrupt":
+                    // Interrupt signal - already handled as general message
+                    break
+                default:
+                    break
+                }
+            }
+
+            // Forward as general message
             DispatchQueue.main.async { [weak self] in
                 self?.callback?.onMessage(message: text)
             }

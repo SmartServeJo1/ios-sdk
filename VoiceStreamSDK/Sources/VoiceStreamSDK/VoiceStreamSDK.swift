@@ -33,6 +33,13 @@ public class VoiceStreamSDK {
     public var onErrorHandler: ((VoiceStreamError) -> Void)?
     public var onDisconnectedHandler: ((String) -> Void)?
 
+    // AI Clinic Voice Pipe Mode callbacks
+    /// Called when transcript is received (AI Clinic mode)
+    /// Parameters: (text, isFinal, language)
+    public var onTranscriptHandler: ((String, Bool, String) -> Void)?
+    /// Called when filler phrase starts playing (AI Clinic mode)
+    public var onFillerStartedHandler: (() -> Void)?
+
     // MARK: - Initialization
 
     /// Private initializer (use initialize() instead)
@@ -169,6 +176,32 @@ public class VoiceStreamSDK {
         webSocketManager.sendText(text)
     }
 
+    // MARK: - AI Clinic Voice Pipe Mode
+
+    /// Send LLM response to be spoken via TTS (AI Clinic mode only)
+    /// Call this after receiving a transcript and getting a response from your LLM
+    /// - Parameter text: The response text to be spoken
+    public func sendLlmResponse(text: String) {
+        guard config.aiClinicMode else {
+            log("Warning: sendLlmResponse called but AI Clinic mode is not enabled")
+            return
+        }
+
+        let message: [String: Any] = [
+            "type": "llm_response",
+            "text": text
+        ]
+
+        if let jsonData = try? JSONSerialization.data(withJSONObject: message, options: []),
+           let jsonString = String(data: jsonData, encoding: .utf8) {
+            log("Sending LLM response: \(text.prefix(100))...")
+            webSocketManager.sendText(jsonString)
+        } else {
+            log("Error: Failed to serialize LLM response")
+            handleError(.messageSendFailed("Failed to serialize LLM response"))
+        }
+    }
+
     // MARK: - Public Instance Methods - Lifecycle
 
     /// Cleanup all resources
@@ -187,6 +220,8 @@ public class VoiceStreamSDK {
         onAudioSentHandler = nil
         onErrorHandler = nil
         onDisconnectedHandler = nil
+        onTranscriptHandler = nil
+        onFillerStartedHandler = nil
     }
 
     // MARK: - Private Methods
@@ -287,6 +322,26 @@ extension VoiceStreamSDK: VoiceStreamCallback {
             guard let self = self else { return }
             self.callback?.onDisconnected(reason: reason)
             self.onDisconnectedHandler?(reason)
+        }
+    }
+
+    public func onTranscript(text: String, isFinal: Bool, language: String) {
+        log("Transcript received: \(text.prefix(100))... (final: \(isFinal), lang: \(language))")
+
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            self.callback?.onTranscript(text: text, isFinal: isFinal, language: language)
+            self.onTranscriptHandler?(text, isFinal, language)
+        }
+    }
+
+    public func onFillerStarted() {
+        log("Filler phrase started")
+
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            self.callback?.onFillerStarted()
+            self.onFillerStartedHandler?()
         }
     }
 }
