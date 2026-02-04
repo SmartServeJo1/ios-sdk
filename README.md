@@ -43,7 +43,7 @@ Add to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/yourusername/VoiceStreamSDK-iOS.git", from: "1.0.0")
+    .package(url: "https://github.com/SmartServeJo1/VoiceStreamSDK-iOS.git", from: "1.0.0")
 ]
 ```
 
