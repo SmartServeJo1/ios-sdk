@@ -33,45 +33,36 @@ public protocol VoiceStreamCallback: AnyObject {
     /// - Parameter reason: The reason for disconnection
     func onDisconnected(reason: String)
 
-    // MARK: - AI Clinic Voice Pipe Mode Callbacks
+    // MARK: - AI Clinic Mode Callbacks
 
-    /// Called when a transcript is received from server (AI Clinic mode only)
-    /// The app should call their LLM with this transcript, then call sendLlmResponse()
+    /// Called when a transcript is received from server (AI Clinic mode)
     /// - Parameters:
     ///   - text: The transcribed user speech
     ///   - isFinal: Whether this is the final transcript (always true currently)
     ///   - language: Detected language ("en" or "ar")
-    func onTranscript(text: String, isFinal: Bool, language: String)
+    ///   - requiresResponse: If true, app must call sendLlmResponse(). If false, system handled it.
+    func onTranscript(text: String, isFinal: Bool, language: String, requiresResponse: Bool)
 
-    /// Called when the server starts playing a filler phrase (AI Clinic mode only)
-    /// Indicates the server is waiting for the LLM response
+    /// Called when the system responds to a greeting/pleasantry on its own (AI Clinic mode)
+    /// No action needed - this is for display/logging only
+    /// - Parameter text: The system's conversational response
+    func onAssistantMessage(text: String)
+
+    /// Called when the server is waiting for LLM response (AI Clinic mode)
+    /// Indicates a real question was forwarded - app should call sendLlmResponse()
     func onFillerStarted()
 }
 
 // MARK: - Default Implementations
 
 public extension VoiceStreamCallback {
-    /// Default implementation for onConnected
     func onConnected() {}
-
-    /// Default implementation for onMessage
     func onMessage(message: String) {}
-
-    /// Default implementation for onAudioReceived
     func onAudioReceived(audioData: Data) {}
-
-    /// Default implementation for onAudioSent
     func onAudioSent(audioData: Data) {}
-
-    /// Default implementation for onError
     func onError(error: VoiceStreamError) {}
-
-    /// Default implementation for onDisconnected
     func onDisconnected(reason: String) {}
-
-    /// Default implementation for onTranscript (AI Clinic mode)
-    func onTranscript(text: String, isFinal: Bool, language: String) {}
-
-    /// Default implementation for onFillerStarted (AI Clinic mode)
+    func onTranscript(text: String, isFinal: Bool, language: String, requiresResponse: Bool) {}
+    func onAssistantMessage(text: String) {}
     func onFillerStarted() {}
 }

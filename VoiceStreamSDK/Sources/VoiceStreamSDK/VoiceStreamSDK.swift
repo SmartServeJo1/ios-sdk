@@ -33,11 +33,16 @@ public class VoiceStreamSDK {
     public var onErrorHandler: ((VoiceStreamError) -> Void)?
     public var onDisconnectedHandler: ((String) -> Void)?
 
-    // AI Clinic Voice Pipe Mode callbacks
+    // AI Clinic Mode callbacks
     /// Called when transcript is received (AI Clinic mode)
-    /// Parameters: (text, isFinal, language)
-    public var onTranscriptHandler: ((String, Bool, String) -> Void)?
-    /// Called when filler phrase starts playing (AI Clinic mode)
+    /// Parameters: (text, isFinal, language, requiresResponse)
+    /// When requiresResponse is true, call sendLlmResponse() with your LLM's answer
+    /// When requiresResponse is false, the system handled it (greeting/pleasantry)
+    public var onTranscriptHandler: ((String, Bool, String, Bool) -> Void)?
+    /// Called when system responds to greeting/pleasantry on its own (AI Clinic mode)
+    /// Parameter: response text (for display/logging only)
+    public var onAssistantMessageHandler: ((String) -> Void)?
+    /// Called when the server is waiting for LLM response (AI Clinic mode)
     public var onFillerStartedHandler: (() -> Void)?
 
     // MARK: - Initialization
@@ -221,6 +226,7 @@ public class VoiceStreamSDK {
         onErrorHandler = nil
         onDisconnectedHandler = nil
         onTranscriptHandler = nil
+        onAssistantMessageHandler = nil
         onFillerStartedHandler = nil
     }
 
@@ -325,18 +331,28 @@ extension VoiceStreamSDK: VoiceStreamCallback {
         }
     }
 
-    public func onTranscript(text: String, isFinal: Bool, language: String) {
-        log("Transcript received: \(text.prefix(100))... (final: \(isFinal), lang: \(language))")
+    public func onTranscript(text: String, isFinal: Bool, language: String, requiresResponse: Bool) {
+        log("Transcript received: \(text.prefix(100))... (final: \(isFinal), lang: \(language), needsLLM: \(requiresResponse))")
 
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
-            self.callback?.onTranscript(text: text, isFinal: isFinal, language: language)
-            self.onTranscriptHandler?(text, isFinal, language)
+            self.callback?.onTranscript(text: text, isFinal: isFinal, language: language, requiresResponse: requiresResponse)
+            self.onTranscriptHandler?(text, isFinal, language, requiresResponse)
+        }
+    }
+
+    public func onAssistantMessage(text: String) {
+        log("Assistant message: \(text.prefix(100))...")
+
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            self.callback?.onAssistantMessage(text: text)
+            self.onAssistantMessageHandler?(text)
         }
     }
 
     public func onFillerStarted() {
-        log("Filler phrase started")
+        log("Waiting for LLM response")
 
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }

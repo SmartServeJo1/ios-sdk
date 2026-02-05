@@ -258,17 +258,26 @@ extension WebSocketManager: WebSocketDelegate {
 
                 switch messageType {
                 case "transcript":
-                    // AI Clinic Voice Pipe mode: transcript received
+                    // AI Clinic mode: transcript received
                     if let transcriptText = json["text"] as? String {
                         let isFinal = json["is_final"] as? Bool ?? true
                         let language = json["language"] as? String ?? "en"
+                        let requiresResponse = json["requires_response"] as? Bool ?? true
                         DispatchQueue.main.async { [weak self] in
-                            self?.callback?.onTranscript(text: transcriptText, isFinal: isFinal, language: language)
+                            self?.callback?.onTranscript(text: transcriptText, isFinal: isFinal, language: language, requiresResponse: requiresResponse)
+                        }
+                        return
+                    }
+                case "assistant_message":
+                    // AI Clinic mode: system handled response (for greetings/pleasantries)
+                    if let responseText = json["text"] as? String {
+                        DispatchQueue.main.async { [weak self] in
+                            self?.callback?.onAssistantMessage(text: responseText)
                         }
                         return
                     }
                 case "filler_started":
-                    // AI Clinic Voice Pipe mode: filler phrase started
+                    // AI Clinic mode: waiting for LLM response
                     DispatchQueue.main.async { [weak self] in
                         self?.callback?.onFillerStarted()
                     }
