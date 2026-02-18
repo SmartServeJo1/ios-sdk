@@ -26,6 +26,13 @@ internal class AudioPlaybackManager {
     // Volume amplification factor (default 3.0x like Android version)
     private let volumeAmplification: Float = 3.0
 
+    // Echo prevention: track pending buffer count
+    private var pendingBufferCount: Int = 0
+    private let bufferLock = NSLock()
+
+    /// Called when all scheduled audio buffers have finished playing
+    var onPlaybackIdle: (() -> Void)?
+
     // MARK: - Initialization
 
     init(config: VoiceStreamConfig) {
@@ -66,15 +73,34 @@ internal class AudioPlaybackManager {
         log("Audio playback stopped")
     }
 
-    /// Queue audio data for playback
+    /// Queue audio data for playback (auto-starts playback if needed)
     func queueAudio(_ data: Data) {
+        // Auto-start playback if not already playing (supports greeting-first flow)
+        if !isPlaying {
+            log("Auto-starting playback for incoming audio")
+            performStartPlayback()
+        }
+
         guard isPlaying else {
-            log("Cannot queue audio: playback not started")
+            log("Cannot queue audio: playback failed to start")
             return
         }
 
         audioQueue.async { [weak self] in
             self?.processAndPlayAudio(data)
+        }
+    }
+
+    /// Clear all queued audio and restart playback node
+    func clearQueue() {
+        audioQueue.async { [weak self] in
+            guard let self = self, self.isPlaying, let playerNode = self.playerNode else { return }
+            playerNode.stop()
+            self.bufferLock.lock()
+            self.pendingBufferCount = 0
+            self.bufferLock.unlock()
+            playerNode.play()
+            self.log("Audio queue cleared")
         }
     }
 
@@ -87,6 +113,7 @@ internal class AudioPlaybackManager {
     func cleanup() {
         stopPlayback()
         callback = nil
+        onPlaybackIdle = nil
     }
 
     // MARK: - Private Methods
@@ -155,9 +182,27 @@ internal class AudioPlaybackManager {
         // Apply volume amplification
         amplifyBuffer(buffer, factor: volumeAmplification)
 
+        // Track pending buffers for idle detection
+        bufferLock.lock()
+        pendingBufferCount += 1
+        bufferLock.unlock()
+
         // Schedule buffer for playback
         playerNode?.scheduleBuffer(buffer) { [weak self] in
-            self?.log("Audio buffer played: \(data.count) bytes")
+            guard let self = self else { return }
+            self.log("Audio buffer played: \(data.count) bytes")
+
+            self.bufferLock.lock()
+            self.pendingBufferCount -= 1
+            let idle = self.pendingBufferCount <= 0
+            self.pendingBufferCount = max(0, self.pendingBufferCount)
+            self.bufferLock.unlock()
+
+            if idle {
+                DispatchQueue.main.async {
+                    self.onPlaybackIdle?()
+                }
+            }
         }
     }
 

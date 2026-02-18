@@ -276,6 +276,14 @@ extension WebSocketManager: WebSocketDelegate {
                         }
                         return
                     }
+                case "llm_required":
+                    // AI Clinic mode: delegation detected, need LLM response from app
+                    if let question = json["question"] as? String {
+                        DispatchQueue.main.async { [weak self] in
+                            self?.callback?.onLlmRequired(question: question)
+                        }
+                        return
+                    }
                 case "filler_started":
                     // AI Clinic mode: waiting for LLM response
                     DispatchQueue.main.async { [weak self] in
@@ -283,8 +291,22 @@ extension WebSocketManager: WebSocketDelegate {
                     }
                     return
                 case "interrupt":
-                    // Interrupt signal - already handled as general message
-                    break
+                    DispatchQueue.main.async { [weak self] in
+                        self?.callback?.onInterrupt()
+                    }
+                    return
+                case "ready":
+                    DispatchQueue.main.async { [weak self] in
+                        self?.callback?.onReady()
+                    }
+                    return
+                case "diagnostic":
+                    let code = json["code"] as? String ?? "unknown"
+                    let diagMessage = json["message"] as? String ?? ""
+                    DispatchQueue.main.async { [weak self] in
+                        self?.callback?.onDiagnostic(code: code, message: diagMessage)
+                    }
+                    return
                 default:
                     break
                 }

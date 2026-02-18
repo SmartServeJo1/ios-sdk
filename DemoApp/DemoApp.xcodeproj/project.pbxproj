@@ -14,12 +14,11 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		AA0000070000000000000001 /* DemoApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DemoApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA0000020000000000000001 /* DemoAppApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemoAppApp.swift; sourceTree = "<group>"; };
 		AA0000040000000000000001 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		AA0000060000000000000001 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		AA0000070000000000000001 /* DemoApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DemoApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA0000080000000000000001 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		AA0000190000000000000001 /* VoiceStreamSDK */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = VoiceStreamSDK; path = ../VoiceStreamSDK; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -39,7 +38,6 @@
 			children = (
 				AA000000B000000000000001 /* DemoApp */,
 				AA000000C000000000000001 /* Products */,
-				AA00001A0000000000000001 /* Packages */,
 			);
 			sourceTree = "<group>";
 		};
@@ -60,14 +58,6 @@
 				AA0000070000000000000001 /* DemoApp.app */,
 			);
 			name = Products;
-			sourceTree = "<group>";
-		};
-		AA00001A0000000000000001 /* Packages */ = {
-			isa = PBXGroup;
-			children = (
-				AA0000190000000000000001 /* VoiceStreamSDK */,
-			);
-			name = Packages;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -120,6 +110,9 @@
 			productRefGroup = AA000000C000000000000001 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
+			packageReferences = (
+				BB0000010000000000000001 /* XCRemoteSwiftPackageReference "ios-sdk" */,
+			);
 			targets = (
 				AA000000D000000000000001 /* DemoApp */,
 			);
@@ -277,6 +270,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "";
+				DEVELOPMENT_TEAM = HK788Z5F7Y;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = DemoApp/Info.plist;
@@ -307,6 +301,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "";
+				DEVELOPMENT_TEAM = HK788Z5F7Y;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = DemoApp/Info.plist;
@@ -332,15 +327,6 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		AA0000120000000000000001 /* Build configuration list for PBXProject "DemoApp" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				AA0000130000000000000001 /* Debug */,
-				AA0000140000000000000001 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
 		AA000000E000000000000001 /* Build configuration list for PBXNativeTarget "DemoApp" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -350,11 +336,32 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		AA0000120000000000000001 /* Build configuration list for PBXProject "DemoApp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AA0000130000000000000001 /* Debug */,
+				AA0000140000000000000001 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		BB0000010000000000000001 /* XCRemoteSwiftPackageReference "ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/SmartServeJo1/ios-sdk.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
 		AA0000180000000000000001 /* VoiceStreamSDK */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = BB0000010000000000000001 /* XCRemoteSwiftPackageReference "ios-sdk" */;
 			productName = VoiceStreamSDK;
 		};
 /* End XCSwiftPackageProductDependency section */

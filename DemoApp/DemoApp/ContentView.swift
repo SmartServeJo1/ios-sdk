@@ -2,535 +2,262 @@
 //  ContentView.swift
 //  DemoApp
 //
-//  Main view for VoiceStreamSDK Demo
+//  Clinic demo showcasing the VoiceChatView widget
 //
 
 import SwiftUI
 import VoiceStreamSDK
 
 struct ContentView: View {
-    @StateObject private var viewModel = DemoViewModel()
 
     var body: some View {
-        NavigationView {
-            ScrollView {
-                VStack(spacing: 20) {
-                    // Connection Status
-                    statusSection
+        ZStack {
+            // Clinic mockup background
+            clinicBackground
 
-                    // Control Buttons
-                    controlButtonsSection
-
-                    // Metrics
-                    metricsSection
-
-                    // Event Log
-                    eventLogSection
-
-                    Spacer()
-                }
-                .padding()
-            }
-            .navigationTitle("VoiceStream Demo")
-            .navigationBarTitleDisplayMode(.inline)
-        }
-        .onAppear {
-            viewModel.initializeSDK()
-        }
-        .onDisappear {
-            viewModel.cleanup()
-        }
-    }
-
-    // MARK: - Status Section
-
-    private var statusSection: some View {
-        VStack(spacing: 12) {
-            Text("Connection Status")
-                .font(.headline)
-
-            HStack {
-                Circle()
-                    .fill(statusColor)
-                    .frame(width: 12, height: 12)
-                Text(viewModel.connectionState.description)
-                    .font(.subheadline)
-            }
-
-            if viewModel.isConnected {
-                Text("Connected for \(viewModel.connectionDuration)")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            }
-        }
-        .padding()
-        .frame(maxWidth: .infinity)
-        .background(Color.secondary.opacity(0.1))
-        .cornerRadius(10)
-    }
-
-    private var statusColor: Color {
-        switch viewModel.connectionState {
-        case .connected:
-            return .green
-        case .connecting, .reconnecting:
-            return .orange
-        case .disconnected:
-            return .red
-        }
-    }
-
-    // MARK: - Control Buttons
-
-    private var controlButtonsSection: some View {
-        VStack(spacing: 12) {
-            HStack(spacing: 12) {
-                Button(action: {
-                    viewModel.connect()
-                }) {
-                    Text("Connect")
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(viewModel.isConnected ? Color.gray : Color.blue)
-                        .foregroundColor(.white)
-                        .cornerRadius(10)
-                }
-                .disabled(viewModel.isConnected)
-
-                Button(action: {
-                    viewModel.disconnect()
-                }) {
-                    Text("Disconnect")
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(viewModel.isConnected ? Color.red : Color.gray)
-                        .foregroundColor(.white)
-                        .cornerRadius(10)
-                }
-                .disabled(!viewModel.isConnected)
-            }
-
-            HStack(spacing: 12) {
-                Button(action: {
-                    viewModel.startStreaming()
-                }) {
-                    Text("Start Streaming")
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(viewModel.isStreaming || !viewModel.isConnected ? Color.gray : Color.green)
-                        .foregroundColor(.white)
-                        .cornerRadius(10)
-                }
-                .disabled(viewModel.isStreaming || !viewModel.isConnected)
-
-                Button(action: {
-                    viewModel.stopStreaming()
-                }) {
-                    Text("Stop Streaming")
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(viewModel.isStreaming ? Color.orange : Color.gray)
-                        .foregroundColor(.white)
-                        .cornerRadius(10)
-                }
-                .disabled(!viewModel.isStreaming)
-            }
-        }
-    }
-
-    // MARK: - Metrics Section
-
-    private var metricsSection: some View {
-        VStack(spacing: 12) {
-            Text("Metrics")
-                .font(.headline)
-
-            VStack(alignment: .leading, spacing: 8) {
-                MetricRow(label: "Data Sent", value: viewModel.formatBytes(viewModel.bytesSent))
-                MetricRow(label: "Data Received", value: viewModel.formatBytes(viewModel.bytesReceived))
-                MetricRow(label: "Messages Received", value: "\(viewModel.messagesReceived)")
-
-                if viewModel.latencySamples.count > 0 {
-                    Divider()
-                    MetricRow(label: "Avg Latency", value: String(format: "%.0f ms", viewModel.averageLatency))
-                    MetricRow(label: "Min Latency", value: String(format: "%.0f ms", viewModel.minLatency))
-                    MetricRow(label: "Max Latency", value: String(format: "%.0f ms", viewModel.maxLatency))
-                    MetricRow(label: "P95 Latency", value: String(format: "%.0f ms", viewModel.p95Latency))
-                    MetricRow(label: "Jitter", value: String(format: "%.0f ms", viewModel.jitter))
-
-                    HStack {
-                        Text("Quality")
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                        Spacer()
-                        Text(viewModel.latencyQuality)
-                            .font(.subheadline)
-                            .fontWeight(.semibold)
-                            .foregroundColor(viewModel.latencyQualityColor)
+            // Voice Chat Widget — one-liner with LLM delegation
+            if #available(iOS 15.0, *) {
+                VoiceChatView(
+                    serverUrl: "ws://192.168.1.180:8080/ws",
+                    tenantId: "clinic"
+                ) { question, respond in
+                    // Demo placeholder — in production, call your own LLM here
+                    print("[DemoApp] LLM question: \(question)")
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                        respond("This is a demo response for: \"\(question)\". In production, your LLM provides the real answer.")
                     }
                 }
             }
         }
-        .padding()
-        .frame(maxWidth: .infinity)
-        .background(Color.secondary.opacity(0.1))
-        .cornerRadius(10)
+        .ignoresSafeArea(.keyboard)
     }
 
-    // MARK: - Event Log Section
+    // MARK: - Clinic Background
 
-    private var eventLogSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
+    private var clinicBackground: some View {
+        ScrollView {
+            VStack(spacing: 0) {
+                clinicHeader
+                VStack(spacing: 16) {
+                    welcomeBanner
+                    quickActionsGrid
+                    appointmentsSection
+                    Spacer(minLength: 100)
+                }
+                .padding(.horizontal, 16)
+                .padding(.top, 16)
+            }
+        }
+        .background(Color(hex: "F0F4F8"))
+        .ignoresSafeArea(edges: .top)
+    }
+
+    // MARK: - Header
+
+    private var clinicHeader: some View {
+        VStack(spacing: 4) {
+            Spacer().frame(height: 50)
             HStack {
-                Text("Event Log")
-                    .font(.headline)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("MediCare")
+                        .font(.system(size: 24, weight: .bold))
+                        .foregroundColor(.white)
+                    Text("Your Health, Our Priority")
+                        .font(.system(size: 13))
+                        .foregroundColor(.white.opacity(0.85))
+                }
                 Spacer()
-                Button("Clear") {
-                    viewModel.clearEventLog()
-                }
-                .font(.caption)
+                // Profile icon
+                Circle()
+                    .fill(Color.white.opacity(0.2))
+                    .frame(width: 40, height: 40)
+                    .overlay(
+                        Image(systemName: "person.fill")
+                            .foregroundColor(.white)
+                            .font(.system(size: 18))
+                    )
             }
-
-            ScrollView {
-                VStack(alignment: .leading, spacing: 4) {
-                    ForEach(viewModel.eventLog.reversed(), id: \.timestamp) { event in
-                        HStack(alignment: .top, spacing: 8) {
-                            Text(event.timeString)
-                                .font(.caption2)
-                                .foregroundColor(.secondary)
-                                .frame(width: 60, alignment: .leading)
-
-                            Text(event.message)
-                                .font(.caption)
-                                .foregroundColor(event.color)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                        }
-                    }
-                }
-            }
-            .frame(height: 200)
-            .padding(8)
-            .background(Color.black.opacity(0.05))
-            .cornerRadius(8)
+            .padding(.horizontal, 20)
+            .padding(.bottom, 16)
         }
-        .padding()
-        .frame(maxWidth: .infinity)
-        .background(Color.secondary.opacity(0.1))
-        .cornerRadius(10)
+        .background(
+            LinearGradient(
+                colors: [Color(hex: "1E3A5F"), Color(hex: "2E5D8A"), Color(hex: "4A90C4")],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        )
+    }
+
+    // MARK: - Welcome Banner
+
+    private var welcomeBanner: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Welcome back!")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundColor(Color(hex: "1E3A5F"))
+                Text("How are you feeling today? Our AI assistant is here to help with appointments and health queries.")
+                    .font(.system(size: 13))
+                    .foregroundColor(.gray)
+                    .lineLimit(3)
+            }
+            Spacer()
+            Image(systemName: "heart.text.square.fill")
+                .font(.system(size: 40))
+                .foregroundColor(Color(hex: "4A90C4").opacity(0.3))
+        }
+        .padding(16)
+        .background(Color.white)
+        .cornerRadius(12)
+        .shadow(color: Color.black.opacity(0.04), radius: 4, x: 0, y: 2)
+    }
+
+    // MARK: - Quick Actions
+
+    private var quickActionsGrid: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Quick Actions")
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundColor(Color(hex: "1E3A5F"))
+
+            LazyVGrid(columns: [
+                GridItem(.flexible(), spacing: 12),
+                GridItem(.flexible(), spacing: 12)
+            ], spacing: 12) {
+                QuickActionCard(
+                    icon: "calendar.badge.plus",
+                    title: "Book\nAppointment",
+                    color: Color(hex: "4A90C4")
+                )
+                QuickActionCard(
+                    icon: "stethoscope",
+                    title: "Find\nDoctor",
+                    color: Color(hex: "5BA88C")
+                )
+                QuickActionCard(
+                    icon: "doc.text.magnifyingglass",
+                    title: "Lab\nResults",
+                    color: Color(hex: "E8945A")
+                )
+                QuickActionCard(
+                    icon: "pills.fill",
+                    title: "My\nPrescriptions",
+                    color: Color(hex: "9B6DB7")
+                )
+            }
+        }
+    }
+
+    // MARK: - Appointments
+
+    private var appointmentsSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text("Upcoming Appointments")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(Color(hex: "1E3A5F"))
+                Spacer()
+                Text("See all")
+                    .font(.system(size: 13))
+                    .foregroundColor(Color(hex: "4A90C4"))
+            }
+
+            AppointmentCard(
+                doctorName: "Dr. Sarah Ahmed",
+                specialty: "General Practitioner",
+                date: "Tomorrow",
+                time: "10:30 AM",
+                iconColor: Color(hex: "4A90C4")
+            )
+
+            AppointmentCard(
+                doctorName: "Dr. Khalid Mansour",
+                specialty: "Cardiologist",
+                date: "Wed, Feb 19",
+                time: "2:00 PM",
+                iconColor: Color(hex: "E8945A")
+            )
+        }
     }
 }
 
-// MARK: - Metric Row
+// MARK: - Quick Action Card
 
-struct MetricRow: View {
-    let label: String
-    let value: String
+struct QuickActionCard: View {
+    let icon: String
+    let title: String
+    let color: Color
 
     var body: some View {
-        HStack {
-            Text(label)
-                .font(.subheadline)
-                .foregroundColor(.secondary)
+        VStack(spacing: 10) {
+            ZStack {
+                Circle()
+                    .fill(color.opacity(0.12))
+                    .frame(width: 44, height: 44)
+                Image(systemName: icon)
+                    .font(.system(size: 20))
+                    .foregroundColor(color)
+            }
+            Text(title)
+                .font(.system(size: 12, weight: .medium))
+                .foregroundColor(Color(hex: "374151"))
+                .multilineTextAlignment(.center)
+                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 14)
+        .background(Color.white)
+        .cornerRadius(12)
+        .shadow(color: Color.black.opacity(0.04), radius: 4, x: 0, y: 2)
+    }
+}
+
+// MARK: - Appointment Card
+
+struct AppointmentCard: View {
+    let doctorName: String
+    let specialty: String
+    let date: String
+    let time: String
+    let iconColor: Color
+
+    var body: some View {
+        HStack(spacing: 12) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(iconColor.opacity(0.12))
+                    .frame(width: 44, height: 44)
+                Image(systemName: "person.fill")
+                    .font(.system(size: 18))
+                    .foregroundColor(iconColor)
+            }
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(doctorName)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(Color(hex: "1F2937"))
+                Text(specialty)
+                    .font(.system(size: 12))
+                    .foregroundColor(.gray)
+            }
+
             Spacer()
-            Text(value)
-                .font(.subheadline)
-                .fontWeight(.medium)
-        }
-    }
-}
 
-// MARK: - Event Log Entry
-
-struct EventLogEntry {
-    let timestamp: Date
-    let message: String
-    let type: EventType
-
-    var timeString: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "HH:mm:ss"
-        return formatter.string(from: timestamp)
-    }
-
-    var color: Color {
-        switch type {
-        case .info:
-            return .primary
-        case .success:
-            return .green
-        case .warning:
-            return .orange
-        case .error:
-            return .red
-        }
-    }
-
-    enum EventType {
-        case info, success, warning, error
-    }
-}
-
-// MARK: - Demo View Model
-
-class DemoViewModel: ObservableObject {
-    @Published var connectionState: ConnectionState = .disconnected
-    @Published var isConnected: Bool = false
-    @Published var isStreaming: Bool = false
-    @Published var eventLog: [EventLogEntry] = []
-    @Published var connectionDuration: String = "00:00:00"
-
-    @Published var bytesSent: Int = 0
-    @Published var bytesReceived: Int = 0
-    @Published var messagesReceived: Int = 0
-    @Published var latencySamples: [Double] = []
-
-    private var sdk: VoiceStreamSDK?
-    private var connectionStartTime: Date?
-    private var durationTimer: Timer?
-    private var lastAudioSentTime: Date?
-
-    // MARK: - SDK Initialization
-
-    func initializeSDK() {
-        let config = VoiceStreamConfig(
-            serverUrl: "wss://streaming-poc.smartserve.ai/ws",
-            tenantId: "smartserve",
-            tenantName: "SmartServe",
-            enableDebugLogging: true
-        )
-
-        sdk = VoiceStreamSDK.initialize(config: config)
-        setupCallbacks()
-
-        addEvent("SDK initialized", type: .info)
-    }
-
-    // MARK: - Callbacks Setup
-
-    private func setupCallbacks() {
-        sdk?.onConnectedHandler = { [weak self] in
-            DispatchQueue.main.async {
-                self?.handleConnected()
+            VStack(alignment: .trailing, spacing: 3) {
+                Text(date)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(Color(hex: "1E3A5F"))
+                Text(time)
+                    .font(.system(size: 11))
+                    .foregroundColor(.gray)
             }
         }
-
-        sdk?.onMessageHandler = { [weak self] message in
-            DispatchQueue.main.async {
-                self?.handleMessage(message)
-            }
-        }
-
-        sdk?.onAudioReceivedHandler = { [weak self] audioData in
-            DispatchQueue.main.async {
-                self?.handleAudioReceived(audioData)
-            }
-        }
-
-        sdk?.onAudioSentHandler = { [weak self] audioData in
-            DispatchQueue.main.async {
-                self?.handleAudioSent(audioData)
-            }
-        }
-
-        sdk?.onErrorHandler = { [weak self] error in
-            DispatchQueue.main.async {
-                self?.handleError(error)
-            }
-        }
-
-        sdk?.onDisconnectedHandler = { [weak self] reason in
-            DispatchQueue.main.async {
-                self?.handleDisconnected(reason)
-            }
-        }
-    }
-
-    // MARK: - Connection Control
-
-    func connect() {
-        sdk?.connect()
-        addEvent("Connecting to server...", type: .info)
-    }
-
-    func disconnect() {
-        sdk?.disconnect()
-        addEvent("Disconnecting...", type: .info)
-    }
-
-    func startStreaming() {
-        sdk?.startAudioStreaming()
-        addEvent("Starting audio streaming...", type: .info)
-        isStreaming = true
-    }
-
-    func stopStreaming() {
-        sdk?.stopAudioStreaming()
-        addEvent("Stopping audio streaming...", type: .info)
-        isStreaming = false
-    }
-
-    func cleanup() {
-        stopDurationTimer()
-        sdk?.cleanup()
-    }
-
-    // MARK: - Event Handlers
-
-    private func handleConnected() {
-        connectionState = .connected
-        isConnected = true
-        connectionStartTime = Date()
-        startDurationTimer()
-        addEvent("Connected to server", type: .success)
-    }
-
-    private func handleMessage(_ message: String) {
-        messagesReceived += 1
-        addEvent("Message: \(message)", type: .info)
-    }
-
-    private func handleAudioReceived(_ audioData: Data) {
-        bytesReceived += audioData.count
-
-        // Calculate latency
-        if let sentTime = lastAudioSentTime {
-            let latency = Date().timeIntervalSince(sentTime) * 1000 // in milliseconds
-            latencySamples.append(latency)
-
-            // Keep only last 100 samples
-            if latencySamples.count > 100 {
-                latencySamples.removeFirst()
-            }
-        }
-    }
-
-    private func handleAudioSent(_ audioData: Data) {
-        bytesSent += audioData.count
-        lastAudioSentTime = Date()
-    }
-
-    private func handleError(_ error: VoiceStreamError) {
-        addEvent("Error: \(error.localizedDescription)", type: .error)
-    }
-
-    private func handleDisconnected(_ reason: String) {
-        connectionState = .disconnected
-        isConnected = false
-        isStreaming = false
-        stopDurationTimer()
-        connectionDuration = "00:00:00"
-        addEvent("Disconnected: \(reason)", type: .warning)
-    }
-
-    // MARK: - Event Log
-
-    func addEvent(_ message: String, type: EventLogEntry.EventType) {
-        let event = EventLogEntry(timestamp: Date(), message: message, type: type)
-        eventLog.append(event)
-
-        // Keep only last 50 events
-        if eventLog.count > 50 {
-            eventLog.removeFirst()
-        }
-    }
-
-    func clearEventLog() {
-        eventLog.removeAll()
-    }
-
-    // MARK: - Duration Timer
-
-    private func startDurationTimer() {
-        durationTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
-            self?.updateDuration()
-        }
-    }
-
-    private func stopDurationTimer() {
-        durationTimer?.invalidate()
-        durationTimer = nil
-    }
-
-    private func updateDuration() {
-        guard let startTime = connectionStartTime else { return }
-
-        let duration = Int(Date().timeIntervalSince(startTime))
-        let hours = duration / 3600
-        let minutes = (duration % 3600) / 60
-        let seconds = duration % 60
-
-        connectionDuration = String(format: "%02d:%02d:%02d", hours, minutes, seconds)
-    }
-
-    // MARK: - Metrics Calculation
-
-    var averageLatency: Double {
-        guard !latencySamples.isEmpty else { return 0 }
-        return latencySamples.reduce(0, +) / Double(latencySamples.count)
-    }
-
-    var minLatency: Double {
-        latencySamples.min() ?? 0
-    }
-
-    var maxLatency: Double {
-        latencySamples.max() ?? 0
-    }
-
-    var p95Latency: Double {
-        guard !latencySamples.isEmpty else { return 0 }
-        let sorted = latencySamples.sorted()
-        let index = Int(Double(sorted.count) * 0.95)
-        return sorted[min(index, sorted.count - 1)]
-    }
-
-    var jitter: Double {
-        guard latencySamples.count > 1 else { return 0 }
-
-        var differences: [Double] = []
-        for i in 1..<latencySamples.count {
-            differences.append(abs(latencySamples[i] - latencySamples[i - 1]))
-        }
-
-        return differences.reduce(0, +) / Double(differences.count)
-    }
-
-    var latencyQuality: String {
-        let avg = averageLatency
-        if avg < 100 {
-            return "Excellent"
-        } else if avg < 200 {
-            return "Good"
-        } else if avg < 500 {
-            return "Fair"
-        } else {
-            return "Poor"
-        }
-    }
-
-    var latencyQualityColor: Color {
-        let avg = averageLatency
-        if avg < 100 {
-            return .green
-        } else if avg < 200 {
-            return .blue
-        } else if avg < 500 {
-            return .orange
-        } else {
-            return .red
-        }
-    }
-
-    // MARK: - Formatting
-
-    func formatBytes(_ bytes: Int) -> String {
-        let kb = Double(bytes) / 1024.0
-        if kb < 1024 {
-            return String(format: "%.2f KB", kb)
-        } else {
-            let mb = kb / 1024.0
-            return String(format: "%.2f MB", mb)
-        }
+        .padding(12)
+        .background(Color.white)
+        .cornerRadius(12)
+        .shadow(color: Color.black.opacity(0.04), radius: 4, x: 0, y: 2)
     }
 }
 

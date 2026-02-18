@@ -51,6 +51,25 @@ public protocol VoiceStreamCallback: AnyObject {
     /// Called when the server is waiting for LLM response (AI Clinic mode)
     /// Indicates a real question was forwarded - app should call sendLlmResponse()
     func onFillerStarted()
+
+    /// Called when the server detects a question requiring LLM delegation (AI Clinic mode)
+    /// The server has already shown a filler phrase ("One moment please...").
+    /// App should call sendLlmResponse() with the LLM's answer.
+    /// - Parameter question: The user's question that needs an LLM response
+    func onLlmRequired(question: String)
+
+    /// Called when server signals that the AI session is ready (Gemini setup complete)
+    /// Greeting audio will follow shortly after this signal
+    func onReady()
+
+    /// Called when server sends an interrupt signal (clear audio, stop playback)
+    func onInterrupt()
+
+    /// Called when server sends a diagnostic warning
+    /// - Parameters:
+    ///   - code: Diagnostic code identifier
+    ///   - message: Human-readable diagnostic message
+    func onDiagnostic(code: String, message: String)
 }
 
 // MARK: - Default Implementations
@@ -65,4 +84,8 @@ public extension VoiceStreamCallback {
     func onTranscript(text: String, isFinal: Bool, language: String, requiresResponse: Bool) {}
     func onAssistantMessage(text: String) {}
     func onFillerStarted() {}
+    func onLlmRequired(question: String) {}
+    func onReady() {}
+    func onInterrupt() {}
+    func onDiagnostic(code: String, message: String) {}
 }
