@@ -19,11 +19,6 @@ let package = Package(
     targets: [
         .target(
             name: "VoiceStreamSDK",
-            dependencies: ["Starscream"],
-            path: "VoiceStreamSDK/Sources/VoiceStreamSDK"),
-        .testTarget(
-            name: "VoiceStreamSDKTests",
-            dependencies: ["VoiceStreamSDK"],
-            path: "VoiceStreamSDK/Tests/VoiceStreamSDKTests"),
+            dependencies: ["Starscream"]),
     ]
 )

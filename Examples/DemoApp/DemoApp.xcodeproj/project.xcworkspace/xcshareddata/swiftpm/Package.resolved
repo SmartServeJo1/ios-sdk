@@ -1,0 +1,24 @@
+{
+  "originHash" : "b7a10886443efd6e0531abb966cc14577e6f86f7075e0af106df303da4b14a48",
+  "pins" : [
+    {
+      "identity" : "ios-sdk",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/SmartServeJo1/ios-sdk.git",
+      "state" : {
+        "revision" : "0cf177ddda349b2b782b2d38e59627747c21f653",
+        "version" : "1.1.0"
+      }
+    },
+    {
+      "identity" : "starscream",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/daltoniam/Starscream.git",
+      "state" : {
+        "revision" : "c6bfd1af48efcc9a9ad203665db12375ba6b145a",
+        "version" : "4.0.8"
+      }
+    }
+  ],
+  "version" : 3
+}
