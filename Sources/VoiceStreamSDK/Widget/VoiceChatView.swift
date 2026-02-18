@@ -48,6 +48,7 @@ public struct VoiceChatView: View {
 
     private let listener: VoiceChatWidgetListener?
 
+    /// Full initializer with config object and listener
     public init(
         config: VoiceStreamConfig,
         theme: VoiceChatTheme = .default,
@@ -55,6 +56,40 @@ public struct VoiceChatView: View {
     ) {
         self.listener = listener
         _viewModel = StateObject(wrappedValue: VoiceChatViewModel(config: config, theme: theme))
+    }
+
+    /// Simple initializer — just server URL and tenant ID
+    ///
+    /// ```swift
+    /// VoiceChatView(serverUrl: "wss://your-server.com/ws", tenantId: "clinic")
+    /// ```
+    public init(
+        serverUrl: String,
+        tenantId: String,
+        theme: VoiceChatTheme = .default
+    ) {
+        let config = VoiceStreamConfig(serverUrl: serverUrl, tenantId: tenantId, tenantName: tenantId)
+        self.listener = nil
+        _viewModel = StateObject(wrappedValue: VoiceChatViewModel(config: config, theme: theme))
+    }
+
+    /// Simple initializer with LLM delegation — closure instead of listener class
+    ///
+    /// ```swift
+    /// VoiceChatView(serverUrl: "wss://your-server.com/ws", tenantId: "clinic") { question, respond in
+    ///     myLLM.ask(question) { answer in respond(answer) }
+    /// }
+    /// ```
+    public init(
+        serverUrl: String,
+        tenantId: String,
+        theme: VoiceChatTheme = .default,
+        onLlmRequest: @escaping (_ question: String, _ respond: @escaping (String) -> Void) -> Void
+    ) {
+        let config = VoiceStreamConfig(serverUrl: serverUrl, tenantId: tenantId, tenantName: tenantId)
+        let closureListener = ClosureBasedListener(onLlmRequest: onLlmRequest)
+        self.listener = closureListener
+        _viewModel = StateObject(wrappedValue: VoiceChatViewModel(config: config, theme: theme, closureListener: closureListener))
     }
 
     public var body: some View {
@@ -402,6 +437,22 @@ struct ThinkingIndicatorView: View {
 
             Spacer(minLength: 60)
         }
+    }
+}
+
+// MARK: - Closure-Based Listener (internal)
+
+/// Wraps a closure as a VoiceChatWidgetListener so users don't need to create a class
+@available(iOS 15.0, *)
+class ClosureBasedListener: VoiceChatWidgetListener {
+    let onLlmRequest: (_ question: String, _ respond: @escaping (String) -> Void) -> Void
+
+    init(onLlmRequest: @escaping (_ question: String, _ respond: @escaping (String) -> Void) -> Void) {
+        self.onLlmRequest = onLlmRequest
+    }
+
+    func onLlmResponseRequired(question: String, respond: @escaping (String) -> Void) {
+        onLlmRequest(question, respond)
     }
 }
 

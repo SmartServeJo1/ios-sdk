@@ -30,12 +30,14 @@ public class VoiceChatViewModel: ObservableObject {
     private var sdk: VoiceStreamSDK?
     private let config: VoiceStreamConfig
     private var hasConnectedOnce: Bool = false
+    private var retainedListener: AnyObject?  // Strong ref for closure-based listener
 
     // MARK: - Initialization
 
-    public init(config: VoiceStreamConfig, theme: VoiceChatTheme = .default) {
+    public init(config: VoiceStreamConfig, theme: VoiceChatTheme = .default, closureListener: AnyObject? = nil) {
         self.config = config
         self.theme = theme
+        self.retainedListener = closureListener
     }
 
     deinit {

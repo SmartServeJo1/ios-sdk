@@ -1,21 +1,8 @@
 # VoiceStreamSDK for iOS
 
-A real-time bidirectional voice streaming SDK for iOS. Connects to a voice AI backend via WebSocket, handles microphone capture, audio playback, and provides a drop-in chat widget with voice and text support.
-
-## Features
-
-- Real-time audio streaming (16kHz capture, 24kHz playback)
-- Drop-in `VoiceChatView` widget — FAB button, chat bubbles, mic toggle, text input
-- LLM delegation — voice AI handles greetings, your app's LLM handles domain questions
-- Auto-reconnect with exponential backoff
-- Echo prevention (mic muting during AI playback)
-- Customizable theme and colors
-- Protocol and closure-based callbacks
-- iOS 14+, Swift 5.9+
+Real-time voice AI SDK for iOS. Drop a widget into your app and get a fully working voice assistant with one line of code.
 
 ## Installation
-
-### Swift Package Manager
 
 In Xcode: **File > Add Package Dependencies...** and enter:
 
@@ -23,58 +10,96 @@ In Xcode: **File > Add Package Dependencies...** and enter:
 https://github.com/SmartServeJo1/ios-sdk.git
 ```
 
-Or add to your `Package.swift`:
-
-```swift
-dependencies: [
-    .package(url: "https://github.com/SmartServeJo1/ios-sdk.git", from: "1.0.0")
-]
-```
-
-### Info.plist
+Add microphone permission to your `Info.plist`:
 
 ```xml
 <key>NSMicrophoneUsageDescription</key>
 <string>Microphone access is needed for voice conversation</string>
 ```
 
-## Usage
+## Quick Start
 
-### Drop-in Widget
-
-Add `VoiceChatView` as an overlay on any screen. It shows a floating button that expands into a full chat panel with voice and text input.
+### Basic — Voice assistant in one line
 
 ```swift
 import SwiftUI
 import VoiceStreamSDK
 
 struct ContentView: View {
-    @StateObject private var listener = MyListener()
-
     var body: some View {
         ZStack {
-            // Your existing app content
             YourAppContent()
 
-            // Voice chat widget overlay
-            if #available(iOS 15.0, *) {
-                VoiceChatView(
-                    config: VoiceStreamConfig(
-                        serverUrl: "wss://your-server.com/ws",
-                        tenantId: "your-tenant",
-                        tenantName: "Your App"
-                    ),
-                    listener: listener
-                )
-            }
+            VoiceChatView(serverUrl: "wss://your-server.com/ws", tenantId: "your-tenant")
         }
     }
 }
 ```
 
-### Direct SDK Usage
+That's it. A floating button appears in the bottom-right corner. Tap it to open a chat panel with voice and text input.
 
-For apps that need full control over the UI:
+### With LLM Delegation
+
+If your voice AI delegates questions to your own LLM, pass a closure:
+
+```swift
+VoiceChatView(serverUrl: "wss://your-server.com/ws", tenantId: "clinic") { question, respond in
+    // Your LLM processes the question
+    myLLMService.ask(question) { answer in
+        respond(answer) // Voice AI speaks the answer
+    }
+}
+```
+
+**How it works:**
+1. User asks "What are your clinic hours?"
+2. Voice AI says "One moment please, let me check..."
+3. Your closure receives the question
+4. You call your LLM, then call `respond()` with the answer
+5. Voice AI speaks it naturally
+
+### With Full Control (Listener)
+
+For connection state, error handling, and more:
+
+```swift
+struct ContentView: View {
+    @StateObject private var listener = MyListener()
+
+    var body: some View {
+        ZStack {
+            YourAppContent()
+
+            VoiceChatView(
+                config: VoiceStreamConfig(
+                    serverUrl: "wss://your-server.com/ws",
+                    tenantId: "clinic",
+                    tenantName: "My Clinic"
+                ),
+                listener: listener
+            )
+        }
+    }
+}
+
+class MyListener: ObservableObject, VoiceChatWidgetListener {
+    func onLlmResponseRequired(question: String, respond: @escaping (String) -> Void) {
+        myLLM.ask(question) { answer in respond(answer) }
+    }
+
+    func onConnectionStateChanged(state: ConnectionState) {
+        print("State: \(state)")
+    }
+
+    func onError(error: VoiceStreamError) {
+        print("Error: \(error)")
+    }
+}
+```
+
+### Direct SDK (No Widget)
+
+For apps that build their own UI:
 
 ```swift
 import VoiceStreamSDK
@@ -82,139 +107,50 @@ import VoiceStreamSDK
 let sdk = VoiceStreamSDK.initialize(config: VoiceStreamConfig(
     serverUrl: "wss://your-server.com/ws",
     tenantId: "your-tenant",
-    tenantName: "Your App",
-    enableDebugLogging: true
+    tenantName: "Your App"
 ))
 
-// Connection
 sdk.onConnectedHandler = { sdk.startAudioStreaming() }
-sdk.onDisconnectedHandler = { reason in print("Disconnected: \(reason)") }
-sdk.onErrorHandler = { error in print("Error: \(error)") }
-
-// Transcripts & AI responses
-sdk.onTranscriptHandler = { text, isFinal, language, requiresResponse in
-    print("User: \(text)")
-}
-sdk.onAssistantMessageHandler = { text in
-    print("AI: \(text)")
-}
-
-// Audio
-sdk.onAudioReceivedHandler = { data in /* raw audio from server */ }
-sdk.onInterruptHandler = { /* user interrupted AI */ }
-sdk.onReadyHandler = { /* AI session ready, greeting will follow */ }
+sdk.onTranscriptHandler = { text, _, _, _ in print("User: \(text)") }
+sdk.onAssistantMessageHandler = { text in print("AI: \(text)") }
+sdk.onLlmRequiredHandler = { question in /* handle delegation */ }
 
 sdk.connect()
-```
-
-### Lifecycle
-
-```swift
-sdk.connect()              // Connect to server
-sdk.startAudioStreaming()  // Start mic + speaker
-sdk.stopAudioStreaming()   // Stop mic + speaker
-sdk.disconnect()           // Disconnect
-sdk.cleanup()              // Release all resources
-```
-
-## LLM Delegation
-
-The voice AI handles greetings and small talk directly. For domain-specific questions (medical, booking, etc.), it says a filler phrase and delegates to your app's LLM.
-
-```swift
-class MyListener: ObservableObject, VoiceChatWidgetListener {
-
-    func onLlmResponseRequired(question: String, respond: @escaping (String) -> Void) {
-        // Your LLM processes the question
-        myLLMService.ask(question) { answer in
-            respond(answer) // Voice AI speaks the answer
-        }
-    }
-
-    func onConnectionStateChanged(state: ConnectionState) { }
-    func onError(error: VoiceStreamError) { }
-}
-```
-
-**How it works:**
-
-1. User asks "What are your clinic hours?"
-2. Voice AI says "One moment please, let me check that for you"
-3. SDK calls `onLlmResponseRequired(question:respond:)`
-4. Your app calls its own LLM, then calls `respond("We're open 8am-6pm...")`
-5. Voice AI speaks the response naturally
-
-## Configuration
-
-```swift
-VoiceStreamConfig(
-    serverUrl: "wss://your-server.com/ws",   // WebSocket endpoint
-    tenantId: "your-tenant",                  // Tenant ID
-    tenantName: "Your App",                   // Display name
-    authToken: nil,                           // Optional Bearer token
-    autoReconnect: true,                      // Reconnect on disconnect
-    maxReconnectAttempts: 5,                  // 0 = unlimited
-    reconnectDelayMs: 1000,                   // Initial delay (exponential backoff)
-    maxReconnectDelayMs: 30000,               // Max backoff delay
-    pingIntervalMs: 30000,                    // Keep-alive interval
-    enableDebugLogging: false,                // Console logging
-    audioInputSampleRate: 16000.0,            // Mic sample rate
-    audioOutputSampleRate: 24000.0            // Speaker sample rate
-)
 ```
 
 ## Theming
 
 ```swift
 VoiceChatView(
-    config: config,
+    serverUrl: "wss://your-server.com/ws",
+    tenantId: "clinic",
     theme: VoiceChatTheme(
         primaryColor: Color(hex: "1E3A5F"),
-        backgroundColor: .white,
         userBubbleColor: Color.blue.opacity(0.15),
         assistantBubbleColor: Color.gray.opacity(0.08),
-        headerGradientStart: Color(hex: "1E3A5F"),
-        headerGradientEnd: Color(hex: "4A90C4"),
         fabSize: 56
-    ),
-    listener: listener
+    )
 )
 ```
 
-## Architecture
+## Configuration Options
 
-```
-┌──────────────────────────────────────────┐
-│            Your Application              │
-└──────────────┬───────────────────────────┘
-               │
-               ▼
-┌──────────────────────────────────────────┐
-│     VoiceChatView (SwiftUI Widget)       │
-│  FAB button, chat bubbles, input bar     │
-└──────────────┬───────────────────────────┘
-               │
-               ▼
-┌──────────────────────────────────────────┐
-│       VoiceStreamSDK (Singleton)         │
-│  Callbacks, lifecycle, state             │
-├──────────┬───────────┬───────────────────┤
-│ WebSocket│  Audio    │   Audio           │
-│ Manager  │ Capture   │  Playback         │
-│(Starscream)│(16kHz mic)│(24kHz speaker)  │
-└──────────┴───────────┴───────────────────┘
-               │
-               ▼
-        Voice AI Server
-    (Gemini Live STT/TTS)
-```
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `serverUrl` | required | WebSocket server URL |
+| `tenantId` | required | Tenant identifier |
+| `tenantName` | tenantId | Display name |
+| `authToken` | nil | Bearer token for auth |
+| `autoReconnect` | true | Reconnect on disconnect |
+| `maxReconnectAttempts` | 5 | Max retries (0 = unlimited) |
+| `enableDebugLogging` | false | Print debug logs |
+| `audioInputSampleRate` | 16000 | Mic sample rate (Hz) |
+| `audioOutputSampleRate` | 24000 | Speaker sample rate (Hz) |
 
-## Audio Specs
+## Requirements
 
-| Direction | Sample Rate | Format | Channels |
-|-----------|-------------|--------|----------|
-| Mic to Server | 16 kHz | 16-bit PCM LE | Mono |
-| Server to Speaker | 24 kHz | 16-bit PCM LE | Mono |
+- iOS 14.0+
+- Swift 5.9+
 
 ## License
 
