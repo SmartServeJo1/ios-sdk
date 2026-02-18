@@ -18,7 +18,7 @@ struct ContentView: View {
             // Voice Chat Widget — one-liner with LLM delegation
             if #available(iOS 15.0, *) {
                 VoiceChatView(
-                    serverUrl: "ws://192.168.1.180:8080/ws",
+                    serverUrl: "wss://streaming-poc.smartserve.ai/ws",
                     tenantId: "clinic"
                 ) { question, respond in
                     // Demo placeholder — in production, call your own LLM here
